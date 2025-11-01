@@ -14,11 +14,13 @@ export default defineConfig(async (): Promise<import("vite").UserConfig> => {
 
   try {
     const cf = await import("@cloudflare/vite-plugin");
-    // treat dynamically imported module as any to avoid stricter type checks
-    const anyCf = cf as any;
-    const cloudflare = anyCf.default ?? anyCf.cloudflare ?? anyCf;
+    // treat dynamically imported module to avoid stricter type checks
+    const anyCf = cf as unknown;
+    const cloudflare = (anyCf as { default?: unknown; cloudflare?: unknown }).default ?? 
+                       (anyCf as { cloudflare?: unknown }).cloudflare ?? 
+                       anyCf;
     if (typeof cloudflare === "function") basePlugins.push(cloudflare());
-  } catch (err) {
+  } catch {
     // If dynamic import fails, log a friendly message and continue without
     // the cloudflare plugin so the build can proceed in CI. This avoids the
     // "File is not defined" ReferenceError coming from undici.
