@@ -3,6 +3,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { mochaPlugins } from "@getmocha/vite-plugins";
 
+// Polyfill for Node 18 environments that lack the File global (required by undici in @cloudflare/vite-plugin)
+if (typeof File === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).File = class File extends Blob {
+    name: string;
+    lastModified: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(bits: any[], name: string, options?: any) {
+      super(bits, options);
+      this.name = name;
+      this.lastModified = options?.lastModified ?? Date.now();
+    }
+  };
+}
+
 // Dynamically import the Cloudflare plugin inside the config function so that
 // the module isn't required at top-level during config load. Some CI/node
 // environments (or plugin versions) import `undici` which expects Web
